@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Raw data files — large CSVs, not useful for coding tasks
+data/
+
+# Postgres data directory
+db/pgdata/
+
+# Git internals
+.git/

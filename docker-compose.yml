@@ -1,0 +1,17 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: semaflow_db
+    environment:
+      POSTGRES_USER: semaflow
+      POSTGRES_PASSWORD: semaflow_local_pw
+      POSTGRES_DB: semaflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U semaflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

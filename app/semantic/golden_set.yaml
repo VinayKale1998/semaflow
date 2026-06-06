@@ -1,0 +1,44 @@
+# /semaflow/app/semantic/golden_set.yaml
+# Stage 2 validation set. Confirms the config covers the questions.
+# Expands to 30-50 in stage 6 (evals) where this becomes the regression suite.
+
+questions:
+  - id: q1
+    text: "Which product categories had the highest revenue last quarter?"
+    type: sql
+    uses:
+      measure: top_categories_by_revenue
+      glossary: [last_quarter]
+    expected_shape: "category, revenue rows ordered desc, Q3 2018 window"
+
+  - id: q2
+    text: "What is the average order value by customer state?"
+    type: sql
+    uses:
+      measure: aov_by_state
+    expected_shape: "customer_state, aov rows ordered desc"
+
+  - id: q3
+    text: "Which sellers in the south had the lowest ratings last month?"
+    type: sql
+    uses:
+      measure: seller_ratings_by_state
+      glossary: [south, last_month]
+    expected_shape: "seller_id, seller_state, avg_rating asc, min 5 reviews, Sep 2018"
+
+  - id: q4
+    text: "What is the return rate in health_beauty, and what does that mean for sellers?"
+    type: hybrid
+    uses:
+      measure: return_rate_by_category
+      corpus: [category_definitions, seller_compliance_guidelines]
+    expected_shape: "return_rate number from SQL, plus grounded explanation from corpus"
+    note: "Corpus half is built in stage 4. Listed here so the hybrid question is real."
+
+  - id: q5
+    text: "What were the top 5 categories by revenue overall?"
+    type: sql
+    uses:
+      measure: top_categories_by_revenue
+      glossary: [top]
+    expected_shape: "5 category, revenue rows, no date filter"

@@ -1,0 +1,179 @@
+# /semaflow/app/semantic/semantic_layer.yaml
+# SemaFlow semantic layer config
+# Version: 0.1 (stage 2)
+# Rule: every entry traces to a specific failure it prevents.
+# Do not add entries that no golden-set question needs yet.
+
+terms:
+  revenue:
+    description: "Total product value of orders (gross merchandise value at item level)"
+    source_column: price
+    source_table: fact_order_items
+    grain: item
+    note: "Never join to fact_order_payments for revenue. Fan-out risk. 13.59M true vs 14.21M fanned-out demonstrated on Olist in stage 1."
+
+  aov:
+    description: "Average order value"
+    formula: "SUM(oi.price) / COUNT(DISTINCT oi.order_id)"
+    source_table: fact_order_items
+    grain: order
+    alias: ["average order value", "avg order value"]
+
+  seller_rating:
+    description: "Average review score for orders fulfilled by a seller"
+    formula: "AVG(r.review_score)"
+    source_table: fact_order_reviews
+    join_path: "fact_order_reviews -> fact_orders -> fact_order_items -> dim_sellers"
+    grain: review
+    note: "One review per order. Duplicates resolved in stage 1 by latest-answer-wins."
+
+  return_rate:
+    description: "Share of orders with status canceled or unavailable (proxy for returns; no post-delivery return tracking in Olist)"
+    formula: "COUNT(DISTINCT order_id) FILTER (WHERE order_status IN ('canceled','unavailable')) / COUNT(DISTINCT order_id)"
+    source_table: fact_orders
+    grain: order
+
+measures:
+  top_categories_by_revenue:
+    question_pattern: "which categories had highest revenue"
+    sql_template: |
+      SELECT
+        ct.product_category_name_english AS category,
+        SUM(oi.price) AS revenue
+      FROM fact_order_items oi
+      JOIN dim_products p ON oi.product_id = p.product_id
+      JOIN dim_category_translation ct ON p.product_category_name = ct.product_category_name
+      JOIN fact_orders o ON oi.order_id = o.order_id
+      {date_filter}
+      GROUP BY category
+      ORDER BY revenue DESC
+      LIMIT {top_n};
+    parameters:
+      date_filter:
+        kind: glossary
+        category: time_periods
+        default: ""
+      top_n:
+        kind: scalar
+        type: integer
+        default: 10
+
+  aov_by_state:
+    question_pattern: "average order value by customer state"
+    sql_template: |
+      SELECT
+        c.customer_state,
+        SUM(oi.price) / COUNT(DISTINCT oi.order_id) AS aov
+      FROM fact_order_items oi
+      JOIN fact_orders o ON oi.order_id = o.order_id
+      JOIN dim_customers c ON o.customer_id = c.customer_id
+      GROUP BY c.customer_state
+      ORDER BY aov DESC;
+
+  seller_ratings_by_state:
+    question_pattern: "seller ratings by region / lowest-rated sellers in a region"
+    sql_template: |
+      SELECT
+        s.seller_id,
+        s.seller_state,
+        AVG(r.review_score) AS avg_rating,
+        COUNT(r.review_id) AS review_count
+      FROM fact_order_reviews r
+      JOIN fact_orders o ON r.order_id = o.order_id
+      JOIN fact_order_items oi ON o.order_id = oi.order_id
+      JOIN dim_sellers s ON oi.seller_id = s.seller_id
+      {date_filter}
+      {state_filter}
+      GROUP BY s.seller_id, s.seller_state
+      HAVING COUNT(r.review_id) >= 5
+      ORDER BY avg_rating ASC
+      LIMIT {top_n};
+    parameters:
+      date_filter:
+        kind: glossary
+        category: time_periods
+        default: ""
+      state_filter:
+        kind: glossary
+        category: regions
+        default: ""
+      top_n:
+        kind: scalar
+        type: integer
+        default: 10
+    note: "HAVING review_count >= 5 prevents single-review sellers dominating the bottom. A real metric-governance decision."
+
+  return_rate_by_category:
+    question_pattern: "return rate in a category"
+    parameters:
+      category:
+        kind: scalar
+        type: string
+    sql_template: |
+      SELECT
+        ct.product_category_name_english AS category,
+        COUNT(DISTINCT o.order_id) FILTER (WHERE o.order_status IN ('canceled','unavailable'))::float
+          / NULLIF(COUNT(DISTINCT o.order_id), 0) AS return_rate
+      FROM fact_orders o
+      JOIN fact_order_items oi ON o.order_id = oi.order_id
+      JOIN dim_products p ON oi.product_id = p.product_id
+      JOIN dim_category_translation ct ON p.product_category_name = ct.product_category_name
+      WHERE ct.product_category_name_english = '{category}'
+      GROUP BY category;
+
+allowed_joins:
+  - {from: fact_order_items, to: dim_products, on: "oi.product_id = p.product_id", grain: item, safe: true}
+  - {from: dim_products, to: dim_category_translation, on: "p.product_category_name = ct.product_category_name", grain: item, safe: true}
+  - {from: fact_order_items, to: fact_orders, on: "oi.order_id = o.order_id", grain: item, safe: true}
+  - {from: fact_orders, to: dim_customers, on: "o.customer_id = c.customer_id", grain: order, safe: true}
+  - {from: fact_order_reviews, to: fact_orders, on: "r.order_id = o.order_id", grain: review, safe: true}
+  - {from: fact_order_items, to: dim_sellers, on: "oi.seller_id = s.seller_id", grain: item, safe: true}
+  - from: fact_order_items
+    to: fact_order_payments
+    on: "oi.order_id = pay.order_id"
+    grain: item
+    safe: false
+    note: "FORBIDDEN for revenue measures. payments has multiple rows per order (installments/split). Causes fan-out. This is the join the guardrail must reject."
+
+glossary:
+  time_periods:
+    # Olist data is static (Sep 2016 to Oct 2018). Relative time terms resolve
+    # against dataset_reference_date, NOT CURRENT_DATE. In production this constant
+    # is replaced by now(). Keeps relative-time questions meaningful on a frozen dataset.
+    dataset_reference_date: "2018-10-17"
+    last_quarter:
+      description: "Previous full calendar quarter relative to dataset_reference_date"
+      resolves_to: "2018-07-01 to 2018-09-30"
+      sql: "WHERE o.order_purchase_timestamp >= '2018-07-01' AND o.order_purchase_timestamp < '2018-10-01'"
+    last_month:
+      description: "Previous full calendar month relative to dataset_reference_date"
+      resolves_to: "2018-09-01 to 2018-09-30"
+      sql: "WHERE o.order_purchase_timestamp >= '2018-09-01' AND o.order_purchase_timestamp < '2018-10-01'"
+    this_year:
+      description: "Calendar year of dataset_reference_date, to date"
+      resolves_to: "2018-01-01 to 2018-10-17"
+      sql: "WHERE o.order_purchase_timestamp >= '2018-01-01' AND o.order_purchase_timestamp <= '2018-10-17'"
+
+  regions:
+    south:
+      description: "Southern Brazil states"
+      states: ["RS", "SC", "PR"]
+      sql: "AND s.seller_state IN ('RS','SC','PR')"
+    southeast:
+      description: "Southeast Brazil states"
+      states: ["SP", "RJ", "MG", "ES"]
+      sql: "AND s.seller_state IN ('SP','RJ','MG','ES')"
+    north:
+      description: "Northern Brazil states"
+      states: ["AM", "PA", "RO", "RR", "AC", "AP", "TO"]
+      sql: "AND s.seller_state IN ('AM','PA','RO','RR','AC','AP','TO')"
+
+  fuzzy_terms:
+    top:
+      default_n: 10
+      note: "LIMIT 10 unless the user specifies a number"
+    underperforming:
+      definition: "Below median value for the metric in question"
+      note: "Compute median first, then filter"
+    high:
+      definition: "Top quartile for the metric in question"

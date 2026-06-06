@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl*)",
+      "Bash(MSYS_NO_PATHCONV=1*)",
+      "Bash(python3*)",
+      "Bash(pytest*)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(mkdir*)",
+      "Bash(grep*)",
+      "Bash(find*)",
+      "Bash(git*)",
+      "Bash(pip install*)",
+      "Bash(docker compose*)",
+      "Bash(docker ps*)",
+      "Bash(psql*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(docker rm*)",
+      "Bash(docker rmi*)",
+      "Bash(DROP DATABASE*)"
+    ]
+  }
+}

@@ -3,10 +3,10 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-load_dotenv("/semaflow/.env")
+load_dotenv()
 engine = create_engine(os.environ["DATABASE_URL"])
 
-DATA = "/semaflow/data"
+DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
 # CSV filename -> raw table name
 TABLES = {

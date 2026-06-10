@@ -151,7 +151,7 @@ build and the narrative.
 - Stage 2 (semantic layer): COMPLETE. YAML config validated.
 - Stage 3 (text-to-SQL + guardrails): COMPLETE. Both checkpoint tests 
   passing (happy path + bad-join rejection).
-- Stage 4 (RAG pipeline): IN PROGRESS.
+- Stage 4 (RAG pipeline): COMPLETE. Checkpoint passed (5/5 retrieval tests).
   - DONE: Corpus authoring. 24 markdown docs across data_dictionary/ 
     (9 files), policy/ (3 files), categories/ (12 files).
   - DONE: chunk.py. Produces app/corpus/chunks.json. 147 chunks, 
@@ -162,7 +162,25 @@ build and the narrative.
   - DONE: embed.py. Loads chunks.json, embeds via all-MiniLM-L6-v2, 
     bulk-inserts 147 rows, builds HNSW index. Smoke test passed: 
     fact_orders.md in top-3 for "What does order_status mean?".
-  - TODO: retriever.py, test_stage4.py.
+  - DONE: app/rag/retriever.py. Hybrid Retriever: _vector_search 
+    (pgvector cosine + doc_type filter) + _bm25_search + _rrf_merge 
+    (RRF c=60) + _rerank (cross-encoder ms-marco-MiniLM-L-6-v2). 
+    Public retrieve(query, top_k, doc_type) -> list[Chunk]. BM25 corpus 
+    and both models loaded once at __init__.
+    - Tokenizer keeps underscores ([^a-z0-9_\s]) so identifiers like 
+      order_status and customer_unique_id survive as single BM25 tokens.
+    - Tokenizer also strips a stopword set. Reason: boilerplate section 
+      titles ("What it does NOT cover") were matching query words 
+      what/does and flooding BM25 with chunks lacking the target 
+      identifier. Real corpus failure, not buzzword hygiene.
+    - Known and accepted: BM25 alone never ranks fact_orders.md top-3 
+      for the order_status query (length normalization buries the long 
+      column-definition chunk). BM25's role is candidate recall into the 
+      top-50 pool; RRF + cross-encoder do final ranking. Do not tune the 
+      BM25 b parameter to "fix" this.
+  - DONE: app/rag/tests/test_stage4.py. 5 hand-picked queries, asserts 
+    expected source in final top-3. All 5 pass. STAGE 4 CHECKPOINT PASSED.
+- Stage 4 deps added to venv: rank-bm25, pgvector, pytest.
 - Stage 5 (LangGraph orchestration + reviewer): NOT STARTED.
 - Stage 6 (evals): NOT STARTED.
 

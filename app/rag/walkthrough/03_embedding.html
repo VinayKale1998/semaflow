@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3. Embedding — SemaFlow RAG walkthrough</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav id="nav"></nav>
+  <h1>3. Embedding</h1>
+  <p class="lede">Each chunk becomes a 384-dimensional vector. The query is
+  embedded by the same model, so they live in one space.</p>
+
+  <h2>One chunk to a vector</h2>
+  <div class="card">
+    <div class="meta" id="chunkmeta"></div>
+    <div class="body" id="chunkbody"></div>
+  </div>
+  <p style="text-align:center;color:var(--muted);font-size:22px;margin:4px 0">&darr;</p>
+  <p class="note">First 20 of 384 dimensions (the query vector shown here; chunk
+  vectors have the same shape):</p>
+  <pre id="vec"></pre>
+
+  <h2>The corpus in two dimensions</h2>
+  <p>All <b id="n"></b> chunk vectors, projected to 2D with PCA and colored by
+  <code class="inline">doc_type</code>. PCA is just for this picture; search runs
+  on the full 384 dimensions.</p>
+  <div id="legend"></div>
+  <div id="scatter"></div>
+  <p class="note" id="variance"></p>
+
+  <div class="caption">
+    <strong>What to read here.</strong> Cosine distance compares direction, not
+    magnitude, so chunks about similar topics point similar ways. The doc types
+    pull into loose regions, but they overlap. That overlap is the whole problem
+    the next stages exist to solve: nearest-by-direction is not the same as
+    correct.
+  </div>
+</main>
+
+<footer class="site">SemaFlow Stage 4 walkthrough.</footer>
+
+<script src="data/walkthrough_data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderChrome("Stage 3 of 8");
+
+  // Show the example doc's defining chunk (first Columns chunk) as the sample.
+  const sample = DATA.example_doc.chunks.find((c) => c.section === "Columns")
+    || DATA.example_doc.chunks[0];
+  document.getElementById("chunkmeta").innerHTML =
+    `<span><b>source</b> ${esc(sample.source)}</span> ${tag(sample.doc_type)} ` +
+    `<span><b>section</b> ${esc(sample.section)}</span> ` +
+    `<span><b>tokens</b> ${sample.token_count}</span>`;
+  document.getElementById("chunkbody").textContent = sample.content;
+
+  const dims = DATA.query_embedding_preview
+    .map((v, i) => `[${String(i).padStart(2, " ")}] ${v >= 0 ? " " : ""}${v.toFixed(5)}`)
+    .join("\n");
+  document.getElementById("vec").textContent =
+    dims + `\n ...  (${DATA.query_embedding_dims - 20} more dimensions)`;
+
+  document.getElementById("n").textContent = DATA.corpus.total_chunks;
+  document.getElementById("legend").innerHTML = scatterLegend(false);
+  document.getElementById("scatter").innerHTML = scatterSVG({});
+  const ev = DATA.projection_2d.explained_variance;
+  document.getElementById("variance").textContent =
+    `PCA explains ${(ev[0] * 100).toFixed(1)}% + ${(ev[1] * 100).toFixed(1)}% ` +
+    `of variance on these two axes. Most of the 384-dim structure is not visible ` +
+    `in 2D, which is expected.`;
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6. RRF — SemaFlow RAG walkthrough</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav id="nav"></nav>
+  <h1>6. Reciprocal Rank Fusion</h1>
+  <p class="lede">Two rankings, one merged list. RRF combines them by rank, not
+  by score.</p>
+
+  <pre style="text-align:center">rrf_score(chunk) = 1 / (<span style="color:var(--accent)">c</span> + rank_vector) + 1 / (<span style="color:var(--accent)">c</span> + rank_bm25)      with c = <span id="c"></span></pre>
+
+  <div class="cols">
+    <div class="col"><h3>Vector top 10</h3><div id="veccol"></div></div>
+    <div class="col"><h3>BM25 top 10</h3><div id="bmcol"></div></div>
+    <div class="col"><h3>RRF merged top 10</h3><div id="rrfcol"></div></div>
+  </div>
+
+  <h2>How each merged chunk got its score</h2>
+  <div id="table"></div>
+
+  <div class="caption">
+    <strong>Why ranks, not scores.</strong> A cosine distance near 0.5 and a
+    BM25 score near 3.4 are not on the same scale; adding them directly would let
+    BM25's larger numbers dominate. RRF throws away the magnitudes and keeps only
+    position, so a chunk ranked highly by either retriever gets credit. The
+    constant <b id="c2"></b> damps the top-rank advantage so a single first-place
+    finish cannot run away with the merge; 60 is the value from the original RRF
+    paper and it works here without tuning.
+  </div>
+</main>
+
+<footer class="site">SemaFlow Stage 4 walkthrough.</footer>
+
+<script src="data/walkthrough_data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderChrome("Stage 6 of 8");
+  const c = DATA.params.rrf_c;
+  document.getElementById("c").textContent = c;
+  document.getElementById("c2").textContent = c;
+
+  function mini(rows, val) {
+    return rows.map((r, i) =>
+      `<div class="minicard">
+        <span class="rank">${i + 1}.</span>
+        <span class="src">${esc(r.source)}</span>
+        <span class="sc">${val(r)}</span><br>
+        <span class="note">${esc(r.section || "")}</span>
+      </div>`).join("");
+  }
+  document.getElementById("veccol").innerHTML =
+    mini(DATA.vector_results, (r) => r.vector_distance.toFixed(3));
+  document.getElementById("bmcol").innerHTML =
+    mini(DATA.bm25_results, (r) => r.bm25_score.toFixed(2));
+  document.getElementById("rrfcol").innerHTML =
+    mini(DATA.rrf_results, (r) => r.rrf_score.toFixed(5));
+
+  document.getElementById("table").innerHTML = resultsTable(DATA.rrf_results, [
+    { key: "source", label: "source", fmt: (v) => esc(v) },
+    { key: "section", label: "section", fmt: (v) => esc(v || "") },
+    { key: "vector_rank", label: "rank_v", cls: "num", fmt: (v) => (v == null ? "—" : v) },
+    { key: "bm25_rank", label: "rank_b", cls: "num", fmt: (v) => (v == null ? "—" : v) },
+    { key: "rrf_score", label: "rrf_score", cls: "score", fmt: (v) => v.toFixed(6) },
+  ], "fact_orders.md");
+</script>
+</body>
+</html>

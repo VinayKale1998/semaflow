@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SemaFlow RAG: How It Actually Works</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav id="nav"></nav>
+
+  <h1>SemaFlow RAG: How It Actually Works</h1>
+  <p class="lede">One question, traced through every stage of the Stage 4
+  retrieval pipeline with the real numbers it produced.</p>
+
+  <p>This walkthrough follows a single query end to end:
+  <code class="inline" id="q"></code>. Nothing here is illustrative or
+  averaged. Every chunk, distance, score, and ranking on these pages comes
+  from running the actual retriever against the Olist corpus and serializing
+  what it computed. The goal is to show where each stage helps and where it
+  falls short, using one worked example instead of prose.</p>
+
+  <div class="stats" id="stats"></div>
+
+  <h2>The stack</h2>
+  <p id="summary"></p>
+
+  <h2>Stages</h2>
+  <table id="toc"></table>
+
+  <div class="caption">
+    <strong>Why one example.</strong> A retrieval pipeline is a sequence of
+    re-rankings. The interesting behavior is how a chunk moves between stages:
+    buried by vector search, surfaced by BM25, merged by RRF, then promoted or
+    demoted by the cross-encoder. A single query makes that movement legible.
+  </div>
+</main>
+
+<footer class="site">
+  SemaFlow Stage 4 walkthrough. All values precomputed from the live retriever.
+</footer>
+
+<script src="data/walkthrough_data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderChrome("Overview");
+  document.getElementById("q").textContent = DATA.query;
+
+  const c = DATA.corpus;
+  const stats = [
+    [c.total_docs, "source docs"],
+    [c.total_chunks, "chunks"],
+    [c.docs_by_type.data_dictionary, "data dictionary"],
+    [c.docs_by_type.policy, "policy"],
+    [c.docs_by_type.category_def, "category defs"],
+    [384, "embedding dims"],
+  ];
+  document.getElementById("stats").innerHTML = stats.map(
+    ([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`
+  ).join("");
+
+  document.getElementById("summary").innerHTML =
+    `${c.total_chunks} chunks across ${c.total_docs} markdown docs are embedded with ` +
+    `<code class="inline">all-MiniLM-L6-v2</code> (384 dims) and stored in ` +
+    `<code class="inline">pgvector</code> with an HNSW index. A query runs two ` +
+    `retrievers in parallel: pgvector cosine search and an in-memory BM25 index. ` +
+    `Their rankings are fused with Reciprocal Rank Fusion (c=${DATA.params.rrf_c}), and ` +
+    `the top candidates are reordered by a cross-encoder ` +
+    `(<code class="inline">ms-marco-MiniLM-L-6-v2</code>) to produce the final top 5.`;
+
+  const descs = {
+    "01_corpus.html": "24 authored docs, three doc types, what the corpus covers.",
+    "02_chunking.html": "Header-aware then fixed-size 256/32 splitting, with overlap.",
+    "03_embedding.html": "Chunks to 384-dim vectors; a 2D PCA view of the corpus.",
+    "04_vector_search.html": "Cosine nearest neighbours, and why they cluster.",
+    "05_bm25.html": "Tokenization, stopword removal, and length normalization.",
+    "06_rrf.html": "Fusing two incomparable rankings by rank, not score.",
+    "07_reranker.html": "Cross-encoder reordering of the fused candidates.",
+    "08_full_pipeline.html": "The whole flow, and the final top 5.",
+  };
+  document.getElementById("toc").innerHTML =
+    "<tr><th>Stage</th><th>What it shows</th></tr>" +
+    PAGES.slice(1).map(([href, label]) =>
+      `<tr><td><a href="${href}">${esc(label)}</a></td><td>${esc(descs[href])}</td></tr>`
+    ).join("");
+</script>
+</body>
+</html>

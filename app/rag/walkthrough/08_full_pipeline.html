@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8. Full pipeline — SemaFlow RAG walkthrough</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav id="nav"></nav>
+  <h1>8. The full pipeline</h1>
+  <p class="lede">Every stage in one view, for the query
+  <code class="inline" id="q"></code>.</p>
+
+  <div class="flow">
+    <div class="stage"><b>Query</b><small id="qf"></small></div>
+    <div class="arrow">&darr;</div>
+    <div class="parallel">
+      <div class="stage"><b>Embed</b><small>all-MiniLM-L6-v2, 384 dims</small></div>
+      <div class="stage"><b>Tokenize</b><small>underscore-safe, stopwords dropped</small></div>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="parallel">
+      <div class="stage"><b>Vector search</b><small>pgvector cosine + HNSW &rarr; top 50</small></div>
+      <div class="stage"><b>BM25</b><small>in-memory index &rarr; top 50</small></div>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="stage"><b>RRF merge</b><small>fuse by rank, c=60 &rarr; top 50</small></div>
+    <div class="arrow">&darr;</div>
+    <div class="stage"><b>Cross-encoder rerank</b><small>ms-marco-MiniLM-L-6-v2 on top 10</small></div>
+    <div class="arrow">&darr;</div>
+    <div class="stage" style="border-color:var(--accent);background:var(--accent-soft)"><b>Top 5 chunks</b><small>returned to the caller</small></div>
+  </div>
+
+  <h2>Final top 5</h2>
+  <div id="final"></div>
+
+  <h2>What each stage prevents</h2>
+  <p id="closing"></p>
+</main>
+
+<footer class="site">SemaFlow Stage 4 walkthrough.</footer>
+
+<script src="data/walkthrough_data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderChrome("Stage 8 of 8");
+  document.getElementById("q").textContent = DATA.query;
+  document.getElementById("qf").textContent = DATA.query;
+
+  document.getElementById("final").innerHTML = DATA.reranker_results.map((r, i) =>
+    `<div class="card">
+      <div class="meta">
+        <span><b>#${i + 1}</b></span>
+        <span><b>source</b> ${esc(r.source)}</span>
+        ${tag(r.doc_type)}
+        <span><b>section</b> ${esc(r.section || "")}</span>
+        <span><b>reranker</b> ${r.reranker_score.toFixed(4)}</span>
+        <span class="note">was RRF #${r.rrf_rank}</span>
+      </div>
+      <div class="body">${esc(r.content || r.preview)}</div>
+    </div>`).join("");
+
+  document.getElementById("closing").innerHTML =
+    `<b>Chunking</b> keeps each candidate small and single-topic, so a match is ` +
+    `specific rather than a whole document. <b>Embedding</b> finds chunks that ` +
+    `mean the same thing even when they share no words. <b>BM25</b> catches the ` +
+    `exact identifier <code class="inline">order_status</code> that embeddings ` +
+    `blur. <b>RRF</b> reconciles the two without letting either scale dominate. ` +
+    `<b>The cross-encoder</b> reads query and chunk together and fixes the ` +
+    `ordering the cheap retrievers got close but wrong. No single stage is ` +
+    `trustworthy alone; the sequence is.`;
+</script>
+</body>
+</html>

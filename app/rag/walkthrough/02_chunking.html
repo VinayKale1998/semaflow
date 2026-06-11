@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2. Chunking — SemaFlow RAG walkthrough</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav id="nav"></nav>
+  <h1>2. Chunking</h1>
+  <p class="lede">The same doc, <code class="inline" id="exname"></code>, split
+  into the chunks that actually went into the database.</p>
+
+  <p>Splitting is two-pass. First the doc is cut on its H2 headers, so a chunk
+  never straddles two sections. Then each section is windowed into fixed-size
+  pieces of <b>256 tokens</b> with a <b>32-token overlap</b>. Metadata
+  (<code class="inline">source</code>, <code class="inline">doc_type</code>,
+  <code class="inline">section</code>, char offsets, token count) is attached at
+  chunk time, not later. Short sections become a single chunk; only longer ones
+  like <code class="inline">Columns</code> get windowed.</p>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--accent-soft);border:1px solid var(--accent)"></span> overlap shared with the adjacent chunk in the same section</span>
+  </div>
+
+  <div id="cards"></div>
+
+  <div class="caption">
+    <strong>What the overlap prevents.</strong> A fact split mid-sentence at a
+    window boundary would otherwise live in neither chunk's searchable text. The
+    32-token overlap means any span near a boundary appears in both neighbours,
+    so a query can match it from either side.
+  </div>
+</main>
+
+<footer class="site">SemaFlow Stage 4 walkthrough.</footer>
+
+<script src="data/walkthrough_data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderChrome("Stage 2 of 8");
+  const doc = DATA.example_doc;
+  document.getElementById("exname").textContent = doc.source;
+
+  // Chunks are already ordered by chunk_index for this doc.
+  const chunks = doc.chunks.slice().sort((a, b) => a.chunk_index - b.chunk_index);
+
+  // Render content, marking the prefix shared with the previous chunk and the
+  // suffix shared with the next chunk (same section, overlapping char ranges).
+  function renderBody(prev, cur, next) {
+    const len = cur.content.length;
+    let preEnd = 0;   // chars from start that overlap prev
+    let sufStart = len; // char index where overlap with next begins
+
+    if (prev && prev.section === cur.section && prev.char_end > cur.char_start) {
+      preEnd = Math.min(prev.char_end - cur.char_start, len);
+    }
+    if (next && next.section === cur.section && next.char_start < cur.char_end) {
+      sufStart = Math.max(next.char_start - cur.char_start, 0);
+    }
+    if (sufStart < preEnd) sufStart = preEnd; // guard tiny chunks
+
+    const head = cur.content.slice(0, preEnd);
+    const mid = cur.content.slice(preEnd, sufStart);
+    const tail = cur.content.slice(sufStart);
+    const mk = (s) => `<mark style="background:var(--accent-soft)">${esc(s)}</mark>`;
+    return (head ? mk(head) : "") + esc(mid) + (tail ? mk(tail) : "");
+  }
+
+  document.getElementById("cards").innerHTML = chunks.map((c, i) => {
+    const prev = chunks[i - 1], next = chunks[i + 1];
+    return `<div class="card">
+      <div class="meta">
+        <span><b>chunk_index</b> ${c.chunk_index}</span>
+        <span><b>source</b> ${esc(c.source)}</span>
+        <span>${tag(c.doc_type)}</span>
+        <span><b>section</b> ${esc(c.section || "(preamble)")}</span>
+        <span><b>chars</b> ${c.char_start}–${c.char_end}</span>
+        <span><b>tokens</b> ${c.token_count}</span>
+      </div>
+      <div class="body">${renderBody(prev, c, next)}</div>
+    </div>`;
+  }).join("");
+</script>
+</body>
+</html>

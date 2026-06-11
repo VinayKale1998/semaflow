@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7. Reranker — SemaFlow RAG walkthrough</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav id="nav"></nav>
+  <h1>7. Cross-encoder rerank</h1>
+  <p class="lede">The top 10 fused candidates are re-scored by a model that reads
+  the query and each chunk together.</p>
+
+  <p>Up to here, the query and chunks were embedded separately and compared by
+  distance. That is a <b>bi-encoder</b>: fast, because every chunk vector is
+  precomputed, but it never sees the query and a chunk at the same time. The
+  reranker is a <b>cross-encoder</b>: it takes each
+  <code class="inline">(query, chunk)</code> pair as one input and outputs a
+  relevance score. It is far more accurate and far more expensive.</p>
+
+  <h2>Scoring the 10 candidates</h2>
+  <p>Each RRF candidate, scored by the cross-encoder. Higher is more relevant.</p>
+  <div id="scored"></div>
+
+  <h2>Before and after</h2>
+  <div class="cols" style="grid-template-columns:1fr 1fr">
+    <div class="col"><h3>RRF top 5 (in)</h3><div id="before"></div></div>
+    <div class="col"><h3>Reranked top 5 (out)</h3><div id="after"></div></div>
+  </div>
+
+  <div class="caption">
+    <strong>The two-stage pattern.</strong> Running the cross-encoder on all
+    <b id="n"></b> chunks for every query would be too slow: it is a full model
+    forward pass per pair, not a vector lookup. So cheap retrievers (vector +
+    BM25, fused by RRF) narrow the field to 10 candidates, and the expensive
+    model only ranks those. Note the reordering: a chunk the cross-encoder reads
+    as directly answering the question can jump several places, and the
+    defining <code class="inline">fact_orders.md</code> chunk lands in the final
+    set.
+  </div>
+</main>
+
+<footer class="site">SemaFlow Stage 4 walkthrough.</footer>
+
+<script src="data/walkthrough_data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderChrome("Stage 7 of 8");
+  document.getElementById("n").textContent = DATA.corpus.total_chunks;
+
+  // The 10 candidates the reranker saw = RRF top 10, shown with their reranker
+  // score where available (top 5 carry it). Sort the scored view by reranker.
+  const rerankById = {};
+  DATA.reranker_results.forEach((r) => { rerankById[r.chunk_id] = r; });
+  const scored = DATA.rrf_results.map((r) => ({
+    ...r,
+    reranker_score: rerankById[r.chunk_id] ? rerankById[r.chunk_id].reranker_score : null,
+  })).sort((a, b) => (b.reranker_score ?? -Infinity) - (a.reranker_score ?? -Infinity));
+
+  document.getElementById("scored").innerHTML = resultsTable(scored, [
+    { key: "source", label: "source", fmt: (v) => esc(v) },
+    { key: "section", label: "section", fmt: (v) => esc(v || "") },
+    { key: "rrf_score", label: "rrf in", cls: "score", fmt: (v) => v.toFixed(5) },
+    { key: "reranker_score", label: "reranker", cls: "score",
+      fmt: (v) => (v == null ? '<span class="note">not in top 5</span>' : `<b>${v.toFixed(4)}</b>`) },
+  ], "fact_orders.md");
+
+  function mini(rows, val) {
+    return rows.map((r, i) =>
+      `<div class="minicard">
+        <span class="rank">${i + 1}.</span>
+        <span class="src">${esc(r.source)}</span>
+        <span class="sc">${val(r)}</span><br>
+        <span class="note">${esc(r.section || "")}</span>
+      </div>`).join("");
+  }
+  document.getElementById("before").innerHTML =
+    mini(DATA.rrf_top5, (r) => r.rrf_score.toFixed(5));
+  document.getElementById("after").innerHTML =
+    mini(DATA.reranker_results, (r) => r.reranker_score.toFixed(3));
+</script>
+</body>
+</html>

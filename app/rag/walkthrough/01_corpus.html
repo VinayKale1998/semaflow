@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. Corpus — SemaFlow RAG walkthrough</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav id="nav"></nav>
+  <h1>1. The corpus</h1>
+  <p class="lede">Twenty-four hand-authored markdown docs, deliberately
+  structured. Controlled authorship is why later stages can stay simple.</p>
+
+  <div class="stats" id="stats"></div>
+
+  <h2>Three doc types</h2>
+  <p>Every chunk carries a <code class="inline">doc_type</code> so retrieval can
+  filter before it searches. Click a folder to expand.</p>
+  <div class="tree" id="tree"></div>
+
+  <h2>One doc in raw form</h2>
+  <p>Here is <code class="inline" id="exname"></code> exactly as written. The
+  <span class="tag data_dictionary">H2</span> headers are highlighted: they are
+  the split boundaries the chunker uses before it falls back to fixed-size
+  windows.</p>
+  <pre id="rawdoc"></pre>
+
+  <div class="caption">
+    <strong>Why this matters.</strong> The docs are short, single-topic, and
+    written with explicit section structure. That is a design choice, not an
+    accident: it removes the failure modes (long rambling documents, buried
+    topics) that justify heavier chunking. The corpus is built to be retrieved.
+  </div>
+</main>
+
+<footer class="site">SemaFlow Stage 4 walkthrough.</footer>
+
+<script src="data/walkthrough_data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderChrome("Stage 1 of 8");
+
+  const c = DATA.corpus;
+  document.getElementById("stats").innerHTML = [
+    [c.total_docs, "source docs"],
+    [c.total_chunks, "chunks"],
+    [c.folders.length, "doc types"],
+  ].map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+
+  document.getElementById("tree").innerHTML = c.folders.map((f) => {
+    const files = f.files.map((fn) => `<div class="file">${esc(fn)}</div>`).join("");
+    return `<details>
+      <summary>${tag(f.doc_type)} ${esc(f.folder)}
+        <span class="count">— ${f.doc_count} docs, ${f.chunk_count} chunks</span>
+      </summary>${files}</details>`;
+  }).join("");
+
+  // Raw doc with H2 headers highlighted. Build from char offsets so the
+  // highlight lands exactly on the section lines.
+  const doc = DATA.example_doc;
+  document.getElementById("exname").textContent = doc.source;
+
+  const raw = doc.content;
+  let html = "";
+  let cursor = 0;
+  // Re-find H2 lines in the raw text to wrap them; offsets in data are the
+  // line starts.
+  const lines = raw.split("\n");
+  html = lines.map((line) =>
+    /^##\s/.test(line)
+      ? `<mark style="background:var(--accent-soft);color:var(--accent);font-weight:600">${esc(line)}</mark>`
+      : esc(line)
+  ).join("\n");
+  document.getElementById("rawdoc").innerHTML = html;
+</script>
+</body>
+</html>

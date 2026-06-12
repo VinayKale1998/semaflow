@@ -7,6 +7,8 @@ import anthropic
 import yaml
 from pydantic import ValidationError
 
+from app.llm.tracing import maybe_trace
+
 from .models import ModelSelection, SQLRequest
 from .prompts import SYSTEM_PROMPT, build_user_prompt
 
@@ -40,7 +42,9 @@ async def run(request: SQLRequest) -> ModelSelection | None:
     semantic_layer = _load_semantic_layer()
     user_prompt = build_user_prompt(request.question, semantic_layer)
 
-    client = anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = maybe_trace(
+        anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    )
 
     system = (
         SYSTEM_PROMPT

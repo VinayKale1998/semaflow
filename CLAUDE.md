@@ -207,9 +207,47 @@ build and the narrative.
   - DONE: app/rag/tests/test_stage4.py. 5 hand-picked queries, asserts 
     expected source in final top-3. All 5 pass. STAGE 4 CHECKPOINT PASSED.
 - Stage 4 deps added to venv: rank-bm25, pgvector, pytest.
-- Stage 5 (LangGraph orchestration + reviewer): IN PROGRESS. Pieces 1-4 DONE
-  (router, graph, synthesizer, reviewer + confidence gate). Piece 5
-  (checkpoint test) next, then Streamlit UI.
+- Stage 5 (LangGraph orchestration + reviewer): COMPLETE. Pieces 1-5 DONE
+  (router, graph, synthesizer, reviewer + confidence gate, checkpoint test)
+  plus the Streamlit trust-layer UI.
+  - Piece 5 (checkpoint test): DONE. app/orchestrator/tests/
+    test_stage5_checkpoint.py. ONE hybrid question end-to-end through
+    Orchestrator.run, single-concept (aov_by_state + customer_state) so it
+    resolves first-pass: route=hybrid >=0.7, both paths produce content,
+    synthesizer answers, reviewer approves WITHOUT firing the loop
+    (revision_count==0), and the answer actually references its sources
+    (top state code present + a retrieved chunk source in sources_used).
+    5 named tests share one module-scoped Orchestrator.run fixture. Suite
+    32 -> 37 (not the brief's predicted 33, deliberate). Brief's 5-category
+    question was rejected: it dilutes retrieval against top_k=5 and fires
+    the loop (logged as a Stage 6 top_k stress-test candidate).
+  - Streamlit UI: DONE. app/ui/streamlit_app.py (+__init__.py). Thin trust
+    layer over Orchestrator.run: query box + 4 sample buttons (session_state),
+    prominent answer, trust badges (route/confidence/grounded/revision via
+    native :color-badge[] markdown, no custom CSS), 3 st.expander sections
+    (SQL details with auto-chart, retrieved chunks, reviewer details).
+    Auto-chart: pandas + built-in st.bar_chart/line_chart/dataframe only
+    (1 numeric + 1 low-card categorical -> bar; 1 numeric + 1 datetime ->
+    line; always shows the table). Orchestrator cached via st.cache_resource
+    (loads transformer models once). Run: streamlit run app/ui/streamlit_app.py.
+    - Async: orchestrator's sql_node asyncio.run pattern works under
+      Streamlit unchanged. Verified Streamlit's script-runner thread has NO
+      already-running event loop (scripts/probes/streamlit_async_check.py via
+      AppTest). No nest_asyncio, no refactor.
+    - Smoked all 4 sample queries end-to-end (scripts/probes/ui_smoke.py) and
+      drove the UI render branches via AppTest (scripts/probes/
+      ui_render_check.py): SQL (sql/bar chart, grounded 0.95), RAG (rag/5
+      chunks, grounded 0.95), Hybrid (both, 27 rows + 5 chunks, grounded
+      0.95), Hedge demo (rag, confidence ~0.25-0.35 RED, revision_count==1,
+      "Self-corrected once" badge). No exceptions on any branch. LangSmith
+      traces flow from UI runs (same maybe_trace path, LANGSMITH_TRACING=true).
+    - NOTE: the hedge demo shows Grounded TRUE (not the brief's predicted
+      grounded=False). That is correct under the recalibrated reviewer: an
+      honest "the sources do not cover this" hedge tells no lies, so it is
+      grounded; the hedge signal is the LOW confidence (red) + the revision
+      badge, not a grounded flip. Brief checklist was written pre-recalibration.
+    - REMAINING manual step (needs a browser, cannot do headless here): take
+      the hedge-demo screenshot for the LinkedIn walkthrough.
   - Piece 1 (router): DONE. app/orchestrator/router.py. Router.classify
     (query) -> RouteDecision(route in {sql,rag,hybrid}, reason, confidence).
     Claude Haiku via forced tool use. test_router.py, 8/8 passing.
@@ -269,7 +307,7 @@ build and the narrative.
     Crypto phrasing was rejected as the demo: it fired but recovered unstably
     (reformulation pulls the payment-types chunk; 2/3 runs scored above gate).
 - Stage 5 deps added to venv: langgraph, langsmith.
-- Test suite: 32 tests. Run scoped to app/ (bare pytest tries to scan
+- Test suite: 37 tests (added test_stage5_checkpoint.py x5). Run scoped to app/ (bare pytest tries to scan
   root-owned db/pgdata and errors). test_pipeline.py makes live Haiku calls
   and is occasionally flaky (measure/parameter nondeterminism, e.g. Haiku
   extracts top_n='all' for "Lowest rated sellers by state"); a single case

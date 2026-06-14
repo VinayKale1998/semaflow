@@ -221,6 +221,26 @@ streamlit run app/ui/streamlit_app.py
 Run the test suite with `pytest app/` (scope to `app/` so it does not scan the
 Docker data volume).
 
+## Lessons Learned
+
+- **Data quality problems matter more than model quality.** A naive order-items
+  to payments join inflated revenue by about 4.5% (13.59M true versus 14.21M
+  fanned out on Olist). The semantic layer exists because correctness failures
+  often originate in data modeling, not in model inference.
+- **Grounded and confident are not the same thing.** An answer can be fully
+  grounded and still fail to resolve the question. The reviewer evaluates the two
+  separately, so an honest hedge scores low confidence without being marked a lie.
+- **Semantic governance beats prompt engineering.** Business definitions such as
+  return rate, average order value, and seller performance needed governed
+  measures, with rules like a five-review minimum baked into the template, rather
+  than increasingly elaborate prompts.
+- **Observability changes system design.** LangSmith traces surfaced failure
+  modes that were invisible from the outputs alone, which drove changes to routing
+  and reviewer behavior, including the confidence-gate recalibration.
+- **Every component should justify its existence.** Semantic chunking, HyDE, and
+  multi-hop retrieval were evaluated and deliberately excluded because the
+  observed failure modes on this corpus did not justify the added complexity.
+
 ## Scope and non-goals
 
 Every component had to trace to a real failure on this specific corpus before it

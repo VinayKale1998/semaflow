@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-load_dotenv("/semaflow/.env")
+load_dotenv()
 engine = create_engine(os.environ["DATABASE_URL"])
 
 SQL = """

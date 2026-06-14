@@ -1,6 +1,6 @@
 import os, sys, urllib.request
 
-DEST = "/semaflow/data"
+DEST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 os.makedirs(DEST, exist_ok=True)
 
 # Known-good raw mirror of the 9 Olist CSVs

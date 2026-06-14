@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(/semaflow/**)",
-      "Read(/mnt/c/Users/HP/**)"
-    ]
-  }
-}

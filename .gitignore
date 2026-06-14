@@ -21,4 +21,11 @@ venv/
 db/pgdata/
 
 # Logs
-*.log	
+*.log
+
+# Raw Olist CSVs (121 MB, public dataset). Fetch with: python app/download_olist.py
+data/*.csv
+
+# Personal harness config and local build prompts (kept out of the public repo)
+**/.claude/settings.local.json
+claude briefs/

@@ -42,3 +42,26 @@ questions:
       measure: top_categories_by_revenue
       glossary: [top]
     expected_shape: "5 category, revenue rows, no date filter"
+
+  - id: q6
+    text: "How are damaged items handled when the seller is at fault?"
+    type: rag
+    uses:
+      corpus: [returns_and_cancellations, seller_compliance_guidelines]
+    expected_shape: >
+      honest hedge: the corpus only has adjacent content (damage in transit,
+      listing accuracy), not seller-fault damage handling
+    expects_revision: true
+    expects_recovery: false
+    note: >
+      Stage 5 loop hedge-demo. First-pass retrieval finds adjacent-but-not-
+      resolving chunks, the reviewer scores below the 0.7 confidence gate
+      (empirically ~0.25-0.35 across runs), the graph reformulates once,
+      fails to recover (no seller-fault damage policy exists in the corpus),
+      and terminates with the hedge. Demonstrates fire -> reformulate ->
+      no-recover -> terminate. Chosen over the cryptocurrency-policy phrasing,
+      which fired but recovered unstably (its reformulation pulls the
+      payment-types chunk and 2 of 3 runs scored above the gate). There is no
+      honest recover-demo on this 147-chunk corpus: first-pass hybrid+rerank
+      retrieval is strong enough that genuine misses are rare, so
+      hedge-terminate is the demonstrated agentic behavior.

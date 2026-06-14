@@ -68,7 +68,9 @@ measures:
       JOIN fact_orders o ON oi.order_id = o.order_id
       JOIN dim_customers c ON o.customer_id = c.customer_id
       GROUP BY c.customer_state
-      ORDER BY aov DESC;
+      ORDER BY aov DESC
+      LIMIT 1000;
+      
 
   seller_ratings_by_state:
     question_pattern: "seller ratings by region / lowest-rated sellers in a region"
@@ -119,7 +121,8 @@ measures:
       JOIN dim_products p ON oi.product_id = p.product_id
       JOIN dim_category_translation ct ON p.product_category_name = ct.product_category_name
       WHERE ct.product_category_name_english = '{category}'
-      GROUP BY category;
+      GROUP BY category
+      LIMIT 1000;
 
 allowed_joins:
   - {from: fact_order_items, to: dim_products, on: "oi.product_id = p.product_id", grain: item, safe: true}

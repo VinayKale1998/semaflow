@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5. BM25 — SemaFlow RAG walkthrough</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav id="nav"></nav>
+  <h1>5. BM25 keyword search</h1>
+  <p class="lede">The same query, scored by exact-token overlap instead of
+  meaning.</p>
+
+  <h2>Tokenization</h2>
+  <p>The tokenizer lowercases, then splits on everything except letters, digits,
+  and underscores. Keeping underscores means <code class="inline">order_status</code>
+  survives as one token instead of fragmenting into
+  <code class="inline">order</code> and <code class="inline">status</code>.</p>
+
+  <h3>Raw tokens</h3>
+  <div class="tokens" id="raw"></div>
+  <h3>After stopword removal</h3>
+  <div class="tokens" id="filtered"></div>
+  <p class="note">Dropped tokens are common English words. They are struck
+  through above. What remains is the one token that discriminates.</p>
+
+  <h2>Top 10 by BM25 score</h2>
+  <div id="table"></div>
+
+  <h2>Contrast with vector search</h2>
+  <p>Same query, the two rankings side by side. Note how little they agree.</p>
+  <div class="cols" style="grid-template-columns:1fr 1fr">
+    <div class="col"><h3>Vector top 10</h3><div id="veccol"></div></div>
+    <div class="col"><h3>BM25 top 10</h3><div id="bmcol"></div></div>
+  </div>
+
+  <div class="caption">
+    <strong>Why stopword removal, and what BM25 still gets wrong.</strong>
+    Boilerplate section titles like "What it does NOT cover" match query words
+    such as <em>what</em> and <em>does</em>, flooding the results with chunks
+    that lack the actual identifier. Dropping those words lets
+    <code class="inline">order_status</code> drive scoring. But BM25 normalizes
+    by length, so short policy chunks that mention the token once rank above the
+    long <code class="inline">fact_orders.md</code> column definition that
+    explains it in depth. BM25's job here is recall into the candidate pool, not
+    the final answer.
+  </div>
+</main>
+
+<footer class="site">SemaFlow Stage 4 walkthrough.</footer>
+
+<script src="data/walkthrough_data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderChrome("Stage 5 of 8");
+
+  const kept = new Set(DATA.bm25_tokens.filtered);
+  document.getElementById("raw").innerHTML = DATA.bm25_tokens.raw
+    .map((t) => `<span class="chip ${kept.has(t) ? "kept" : "dropped"}">${esc(t)}</span>`)
+    .join("");
+  document.getElementById("filtered").innerHTML = DATA.bm25_tokens.filtered
+    .map((t) => `<span class="chip kept">${esc(t)}</span>`).join("");
+
+  document.getElementById("table").innerHTML = resultsTable(DATA.bm25_results, [
+    { key: "source", label: "source", fmt: (v) => esc(v) },
+    { key: "section", label: "section", fmt: (v) => esc(v || "") },
+    { key: "doc_type", label: "type", fmt: (v) => tag(v) },
+    { key: "bm25_score", label: "BM25", cls: "score", fmt: (v) => v.toFixed(4) },
+  ], "fact_orders.md");
+
+  function mini(rows, scoreKey, fmt) {
+    return rows.map((r, i) =>
+      `<div class="minicard ${r.source === "fact_orders.md" ? "" : ""}">
+        <span class="rank">${i + 1}.</span>
+        <span class="src">${esc(r.source)}</span>
+        <span class="sc">${fmt(r[scoreKey])}</span><br>
+        <span class="note">${esc(r.section || "")}</span>
+      </div>`
+    ).join("");
+  }
+  document.getElementById("veccol").innerHTML =
+    mini(DATA.vector_results, "vector_distance", (v) => v.toFixed(3));
+  document.getElementById("bmcol").innerHTML =
+    mini(DATA.bm25_results, "bm25_score", (v) => v.toFixed(2));
+</script>
+</body>
+</html>

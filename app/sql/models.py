@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 # All valid measure keys from semantic_layer.yaml measures section.
@@ -62,12 +62,22 @@ class GuardrailResult(BaseModel):
 
 
 class SQLResponse(BaseModel):
-    """Complete pipeline result, from raw question to validated SQL."""
+    """Complete pipeline result, from raw question to executed rows.
 
-    request: SQLRequest
-    model_selection: ModelSelection
+    Upstream context (request, model_selection, guardrail) is optional because
+    executor.execute() constructs a SQLResponse from a ResolvedSQL alone; it
+    does not have those objects. run_sql_pipeline() enriches them afterward,
+    since it is the step that holds all four. resolved is always present.
+    """
+
+    request: SQLRequest | None = None
+    model_selection: ModelSelection | None = None
     resolved: ResolvedSQL
-    guardrail: GuardrailResult
-    # populated only when guardrail.passed is True
+    guardrail: GuardrailResult | None = None
+    # Execution result, populated by executor.execute().
+    rows: list[dict[str, Any]] = Field(default_factory=list)
+    columns: list[str] = Field(default_factory=list)
+    row_count: int = 0
+    # final_sql: the SQL actually executed. ready_to_execute: True once run.
     final_sql: str | None = None
-    ready_to_execute: bool
+    ready_to_execute: bool = False

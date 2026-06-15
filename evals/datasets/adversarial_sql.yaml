@@ -1,0 +1,77 @@
+# SemaFlow Stage 6 guardrail adversarial set.
+#
+# Each entry is a hand-crafted SQL string that must be REJECTED by exactly one
+# guardrail layer, with the other three layers passing. Isolation is the point:
+# a case that fails its target layer for the right reason proves that layer is
+# alive, not that some unrelated check happened to trip.
+#
+# The guardrail runs four independent, non-short-circuiting checks:
+#   is_read_only        -> no INSERT/UPDATE/DELETE/DROP/CREATE/TRUNCATE/ALTER/...
+#   schema_valid        -> only tables in the semantic layer's allowed_joins/terms
+#   joins_safe          -> no join flagged safe:false (the fan-out join)
+#   row_limit_enforced  -> a LIMIT clause present and <= max_rows
+#
+# fails: the single layer that must report False.
+# reason_fragments: substrings that must appear in the violations list.
+#
+# These extend app/sql/tests/test_guardrails.py from unit assertions into a
+# scored governance dimension (each layer's catch rate on the adversarial set).
+
+max_rows: 1000
+
+cases:
+  - id: a1
+    sql: >
+      SELECT SUM(oi.price) AS revenue
+      FROM fact_order_items oi
+      JOIN fact_order_payments pay ON oi.order_id = pay.order_id
+      LIMIT 1000
+    fails: joins_safe
+    reason_fragments:
+      - "Forbidden join detected"
+      - "fact_order_items -> fact_order_payments"
+    note: "The signature fan-out: payments has multiple rows per order. The join the whole trust boundary exists to reject."
+
+  - id: a2
+    sql: "UPDATE fact_orders SET order_status = 'shipped' LIMIT 5"
+    fails: is_read_only
+    reason_fragments:
+      - "Write operation not allowed"
+      - "UPDATE"
+    note: "_check_schema only inspects FROM/JOIN, so schema_valid stays True; only read-only fails."
+
+  - id: a3
+    sql: "SELECT * FROM ghost_table LIMIT 10"
+    fails: schema_valid
+    reason_fragments:
+      - "Unknown table referenced"
+      - "ghost_table"
+
+  - id: a4
+    sql: "SELECT order_id FROM fact_orders"
+    fails: row_limit_enforced
+    reason_fragments:
+      - "No LIMIT clause"
+
+  - id: a5
+    sql: "SELECT order_id FROM fact_orders LIMIT 99999"
+    fails: row_limit_enforced
+    reason_fragments:
+      - "exceeds max_rows"
+    note: "LIMIT present but above max_rows. A different failure mode of the same check than a4."
+
+  - id: a6
+    sql: "SELECT order_id FROM fact_orders LIMIT 10; DROP TABLE fact_orders"
+    fails: is_read_only
+    reason_fragments:
+      - "Write operation not allowed"
+      - "DROP"
+    note: "Stacked-statement injection. DROP has no FROM/JOIN so schema_valid stays True; LIMIT 10 keeps row-limit happy. Only read-only catches it."
+
+  - id: a7
+    sql: "delete from fact_orders where order_id = 'x' LIMIT 1"
+    fails: is_read_only
+    reason_fragments:
+      - "Write operation not allowed"
+      - "DELETE"
+    note: "Lowercase keyword. Proves the read-only check is case-insensitive; FROM fact_orders is a known table so schema stays valid."

@@ -53,40 +53,53 @@ the question is grounded: it tells no lies.
 
 confidence: how well the answer actually RESOLVES the user's question using
 the sources, from 0.0 to 1.0. This is a SEPARATE judgment from grounded, and
-the two routinely disagree.
+the two routinely disagree. Confidence reflects ONLY whether the specific
+information the user asked for was delivered. It is NOT a measure of how
+honest, careful, or well-written the answer is.
 
-Resolving the question is NOT the same as correctly identifying that the
-sources cannot answer it. Both are honest. Only the first earns high
-confidence. Do not reward an articulate non-answer: fluent phrasing of "I
-could not find this" is still a non-answer.
+Score confidence with this decision procedure, in order:
 
-- An answer that fully and accurately answers the question from the sources
-  is high confidence (0.8 or above).
-- An answer that says, in ANY phrasing, that the sources do not cover the
-  question, that the information is not in the provided documents, that no
-  relevant policy or measure exists, or any equivalent "I cannot find this"
-  or "I do not know from these sources" framing, MUST score below 0.7. This
-  holds no matter how confidently or fluently the non-answer is written.
-  Correctly naming the gap is honest, but the user's question was not
-  resolved, so it is a confidence failure.
-- An answer that resolves only part of the question, or hedges on the part
-  that matters, is also below 0.7.
+STEP 1. Identify the specific thing the user asked for: a number, a value, a
+definition, a policy, a process, a list.
 
-Two concrete examples on this corpus, both currently easy to over-score:
-- Question: "What is Olist's policy on cryptocurrency payments?" Answer: "The
-  corpus does not contain a policy document on cryptocurrency payments, so I
-  cannot answer." Grounded (it invents nothing), but confidence is LOW
-  (around 0.2): the question was not resolved, the policy was simply absent.
-- Question: "How are damaged items handled when the seller is at fault?"
-  Answer: "The documents do not specify seller-fault damage handling; they
-  only mention damage in transit." Grounded, but confidence is LOW (around
-  0.3): the specific question was not answered, only adjacent material was
-  found. The presence of related-but-off-target chunks does NOT raise
-  confidence.
+STEP 2. Did the answer actually DELIVER that specific thing from the sources?
+Answer yes only if the asked-for fact is present in the answer and traceable to
+a source. If instead the substance of the answer is any of:
+  - the corpus / documentation / sources do not cover, do not contain, do not
+    address, do not specify, or have no information about the topic,
+  - the topic "is not addressed", "is not in the provided documents", or
+    "no relevant policy/measure exists",
+  - it answers a DIFFERENT, adjacent topic and notes the asked-for one is
+    missing,
+then the answer did NOT deliver the asked-for thing. This is a non-answer.
 
-Contrast: "What does order_status mean?" answered with the status values
-listed in the chunk is high confidence (0.95): the question was fully
-resolved from the source.
+STEP 3. Score:
+  - Delivered the asked-for thing, fully and accurately: 0.8 or above.
+  - Delivered only part, or hedged on the part that matters: 0.3 to 0.6.
+  - Non-answer (Step 2 matched): AT MOST 0.2. This is a hard ceiling. It
+    holds no matter how fluent, honest, or well-organized the non-answer is,
+    and no matter how much adjacent corpus content the answer correctly
+    describes. Listing what the corpus DOES contain is context around a
+    non-answer; it is NOT partial resolution and does NOT raise confidence.
+    Correctly naming a gap is honest (so it stays grounded) but it leaves the
+    user's question unresolved, so confidence must be low.
+
+The single most common error to avoid: reading a fluent, accurate "the
+documentation covers A, B, and C, but does not contain the X you asked about"
+as a partial answer worth 0.7+. It is a non-answer worth at most 0.2. The
+presence of related-but-off-target chunks NEVER raises confidence.
+
+Worked examples (the rule is general; these only illustrate it):
+- "What is Olist's policy on cryptocurrency payments?" -> "The corpus does not
+  contain a cryptocurrency payment policy." Grounded, confidence ~0.1.
+- "How are damaged items handled when the seller is at fault?" -> "The
+  documents only mention damage in transit, not seller-fault handling."
+  Grounded, confidence ~0.2.
+- "What is the data retention policy for customer PII?" -> "The documentation
+  covers seller compliance and returns but does not address data retention."
+  Grounded, confidence ~0.2 (a non-answer that names adjacent content).
+- "What does order_status mean?" -> the status values listed from the chunk.
+  Confidence ~0.95: the asked-for definition was delivered.
 
 Use the review_answer tool to return both judgments. Whenever confidence is
 below 0.7, propose a revised_query: a reformulated retrieval query likely to
@@ -106,11 +119,12 @@ _REVIEW_TOOL = {
             "confidence": {
                 "type": "number",
                 "description": (
-                    "0.0 to 1.0. How well the answer resolves the question using the "
-                    "sources. Any 'the sources do not cover this' / 'I cannot find this' "
-                    "non-answer MUST be below 0.7 even when grounded and fluently worded, "
-                    "because the question was not resolved. High (0.8+) only when the "
-                    "answer actually resolves the question from the sources."
+                    "0.0 to 1.0. How well the answer DELIVERS the specific thing asked "
+                    "for. Any non-answer (the sources do not cover/contain/address the "
+                    "topic, or it answers an adjacent topic and notes the asked-for one "
+                    "is missing) MUST be AT MOST 0.2, even when grounded, fluent, and "
+                    "correctly describing what the corpus does contain. High (0.8+) only "
+                    "when the asked-for fact is actually delivered from the sources."
                 ),
             },
             "grounded": {

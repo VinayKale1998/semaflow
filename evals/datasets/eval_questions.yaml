@@ -1,0 +1,333 @@
+# SemaFlow Stage 6 evaluation set.
+#
+# This is the regression suite the Stage 2 golden_set.yaml promised it would
+# grow into. It is NOT a generic answer-quality benchmark. Every case is
+# labeled to score one or more governance dimensions:
+#
+#   expected_route     -> routing accuracy (the SHAPE of the question)
+#   expected_measure   -> measure-selection accuracy (SQL/hybrid)
+#   expected_glossary  -> glossary resolution (dot-namespaced refs)
+#   expected_status    -> the trust boundary: does the pipeline succeed or
+#                         correctly refuse with no_measure_matched
+#   expected_sources   -> retrieval hit-rate (any-of must appear in top_k)
+#   expects_hedge      -> hedge calibration: reviewer confidence < 0.7
+#
+# The senior signal lives in the *_oos cases. An out-of-scope SQL question is
+# still SQL-SHAPED, so the router should route it to sql; the system must then
+# REFUSE (no_measure_matched) rather than invent a measure. An out-of-scope RAG
+# question is still RAG-shaped; the system must HEDGE rather than fabricate
+# policy. Routing (shape) and feasibility (governance) are scored separately on
+# purpose: a correct refusal is a pass, not a failure.
+#
+# Locked scope: no case requires a measure or corpus doc that does not already
+# exist. The 4 measures are top_categories_by_revenue, aov_by_state,
+# seller_ratings_by_state, return_rate_by_category. Sources are the .md
+# basenames the retriever returns.
+
+cases:
+  # ── SQL positive: maps cleanly to one of the 4 measures ──────────────────
+  - id: s1
+    text: "What were the top 5 categories by revenue overall?"
+    category: sql_positive
+    expected_route: sql
+    expected_measure: top_categories_by_revenue
+    expected_glossary: []
+    expected_status: success
+    note: "top_n=5, no date filter. The Stage 2 golden q5."
+
+  - id: s2
+    text: "Which product categories had the highest revenue last quarter?"
+    category: sql_positive
+    expected_route: sql
+    expected_measure: top_categories_by_revenue
+    expected_glossary: [time_periods.last_quarter]
+    expected_status: success
+    note: "Relative time resolves against dataset_reference_date 2018-10-17, not now()."
+
+  - id: s3
+    text: "What is the average order value by customer state?"
+    category: sql_positive
+    expected_route: sql
+    expected_measure: aov_by_state
+    expected_glossary: []
+    expected_status: success
+
+  - id: s4
+    text: "Which states have the highest average order value?"
+    category: sql_positive
+    expected_route: sql
+    expected_measure: aov_by_state
+    expected_glossary: []
+    expected_status: success
+    note: "Phrasing variant of s3; should select the same measure."
+
+  - id: s5
+    text: "Which sellers in the south had the lowest ratings last month?"
+    category: sql_positive
+    expected_route: sql
+    expected_measure: seller_ratings_by_state
+    expected_glossary: [regions.south, time_periods.last_month]
+    expected_status: success
+    note: "Two glossary refs in one question. Stage 2 golden q3."
+
+  - id: s6
+    text: "Show me the lowest rated sellers in the southeast region."
+    category: sql_positive
+    expected_route: sql
+    expected_measure: seller_ratings_by_state
+    expected_glossary: [regions.southeast]
+    expected_status: success
+
+  - id: s7
+    text: "What is the return rate for health_beauty?"
+    category: sql_positive
+    expected_route: sql
+    expected_measure: return_rate_by_category
+    expected_glossary: []
+    expected_status: success
+    note: "Bare metric, no interpretation clause, so sql not hybrid. Category param = health_beauty."
+
+  - id: s8
+    text: "Top 10 categories by revenue this year."
+    category: sql_positive
+    expected_route: sql
+    expected_measure: top_categories_by_revenue
+    expected_glossary: [time_periods.this_year]
+    expected_status: success
+    note: "top_n=10, this_year resolves to 2018-01-01..2018-10-17."
+
+  - id: s9
+    text: "Rank sellers in the north by their average review score, worst first."
+    category: sql_positive
+    expected_route: sql
+    expected_measure: seller_ratings_by_state
+    expected_glossary: [regions.north]
+    expected_status: success
+
+  - id: s10
+    text: "What is the return rate in the toys category?"
+    category: sql_positive
+    expected_route: sql
+    expected_measure: return_rate_by_category
+    expected_glossary: []
+    expected_status: success
+    note: "Category param = toys."
+
+  # ── RAG positive: answerable from one corpus doc ─────────────────────────
+  - id: r1
+    text: "What does order_status mean?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [fact_orders.md]
+    expects_hedge: false
+    note: "Stage 4 smoke query. Status values live in the fact_orders chunk."
+
+  - id: r2
+    text: "What is the difference between customer_id and customer_unique_id?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [dim_customers.md]
+    expects_hedge: false
+
+  - id: r3
+    text: "What columns are in the fact_order_items table and what do they hold?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [fact_order_items.md]
+    expects_hedge: false
+
+  - id: r4
+    text: "How is the review_score recorded for an order?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [fact_order_reviews.md]
+    expects_hedge: false
+
+  - id: r5
+    text: "What are the seller compliance rules?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [seller_compliance.md]
+    expects_hedge: false
+
+  - id: r6
+    text: "What is the policy on returns and cancellations?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [returns_and_cancellations.md]
+    expects_hedge: false
+
+  - id: r7
+    text: "What are the listing standards a seller must follow?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [listing_standards.md]
+    expects_hedge: false
+
+  - id: r8
+    text: "What kinds of products are in the health_beauty category?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [category_health_beauty.md]
+    expects_hedge: false
+
+  - id: r9
+    text: "How is payment data structured, including installments?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [fact_order_payments.md]
+    expects_hedge: false
+
+  - id: r10
+    text: "What is the geolocation lookup table used for?"
+    category: rag_positive
+    expected_route: rag
+    expected_sources: [geo_lookup.md]
+    expects_hedge: false
+
+  # ── Hybrid positive: needs a SQL number AND a corpus explanation ─────────
+  - id: h1
+    text: "What is the return rate in health_beauty, and what does that mean for sellers?"
+    category: hybrid_positive
+    expected_route: hybrid
+    expected_measure: return_rate_by_category
+    expected_glossary: []
+    expected_status: success
+    expected_sources: [seller_compliance.md, returns_and_cancellations.md]
+    expects_hedge: false
+    note: "Stage 2 golden q4 and the Stage 5 checkpoint shape."
+
+  - id: h2
+    text: "What were the top categories by revenue, and what does the electronics category cover?"
+    category: hybrid_positive
+    expected_route: hybrid
+    expected_measure: top_categories_by_revenue
+    expected_glossary: []
+    expected_status: success
+    expected_sources: [category_electronics.md]
+    expects_hedge: false
+
+  - id: h3
+    text: "What is the average order value by state, and what does customer_state represent?"
+    category: hybrid_positive
+    expected_route: hybrid
+    expected_measure: aov_by_state
+    expected_glossary: []
+    expected_status: success
+    expected_sources: [dim_customers.md]
+    expects_hedge: false
+
+  - id: h4
+    text: "Which sellers in the south have the lowest ratings, and what compliance rules apply to them?"
+    category: hybrid_positive
+    expected_route: hybrid
+    expected_measure: seller_ratings_by_state
+    expected_glossary: [regions.south]
+    expected_status: success
+    expected_sources: [seller_compliance.md]
+    expects_hedge: false
+
+  - id: h5
+    text: "What is the return rate for toys, and how are cancellations handled?"
+    category: hybrid_positive
+    expected_route: hybrid
+    expected_measure: return_rate_by_category
+    expected_glossary: []
+    expected_status: success
+    expected_sources: [returns_and_cancellations.md]
+    expects_hedge: false
+
+  - id: h6
+    text: "Show the top categories by revenue and explain what the watches_gifts category includes."
+    category: hybrid_positive
+    expected_route: hybrid
+    expected_measure: top_categories_by_revenue
+    expected_glossary: []
+    expected_status: success
+    expected_sources: [category_watches_gifts.md]
+    expects_hedge: false
+
+  # ── SQL out-of-scope: sql-SHAPED but no declared measure. Must REFUSE. ────
+  # The trust boundary. Correct behavior is route=sql AND
+  # status=no_measure_matched. Selecting any measure here is a hallucination.
+  - id: x1
+    text: "What is the total freight cost per seller?"
+    category: sql_oos
+    expected_route: sql
+    expected_measure: null
+    expected_status: no_measure_matched
+    note: "No freight measure exists. Must refuse, not bend an unrelated measure."
+
+  - id: x2
+    text: "How many orders were delivered later than their estimated delivery date?"
+    category: sql_oos
+    expected_route: sql
+    expected_measure: null
+    expected_status: no_measure_matched
+    note: "No late-delivery measure. Delivery timestamps exist in raw data but no governed metric."
+
+  - id: x3
+    text: "What is the average delivery time in days by customer state?"
+    category: sql_oos
+    expected_route: sql
+    expected_measure: null
+    expected_status: no_measure_matched
+
+  - id: x4
+    text: "Which customers placed the most orders?"
+    category: sql_oos
+    expected_route: sql
+    expected_measure: null
+    expected_status: no_measure_matched
+    note: "No per-customer order-count measure. aov_by_state is state-grain, not a match."
+
+  - id: x5
+    text: "What is the median product weight by category?"
+    category: sql_oos
+    expected_route: sql
+    expected_measure: null
+    expected_status: no_measure_matched
+
+  # ── RAG out-of-scope: rag-SHAPED but the corpus has no resolving doc. ─────
+  # Must HEDGE. Correct behavior is route=rag and reviewer confidence < 0.7.
+  - id: g1
+    text: "How are damaged items handled when the seller is at fault?"
+    category: rag_oos
+    expected_route: rag
+    expected_sources: []
+    expects_hedge: true
+    expects_revision: true
+    expects_recovery: false
+    note: "The locked Stage 5 hedge demo (golden q6). Adjacent chunks (damage in transit) exist; seller-fault handling does not."
+
+  - id: g2
+    text: "What is Olist's policy on cryptocurrency payments?"
+    category: rag_oos
+    expected_route: rag
+    expected_sources: []
+    expects_hedge: true
+    note: "No crypto policy. Reformulation can pull the payment-types chunk; recovery is unstable, so hedge is the expected stable outcome."
+
+  - id: g3
+    text: "What is the data retention policy for customer personal information?"
+    category: rag_oos
+    expected_route: rag
+    expected_sources: []
+    expects_hedge: true
+    note: "No PII/retention doc in the corpus."
+
+  - id: g4
+    text: "What is the SLA for customer support response times?"
+    category: rag_oos
+    expected_route: rag
+    expected_sources: []
+    expects_hedge: true
+    note: "No support-SLA doc. Compliance docs are adjacent but do not resolve this."
+
+  - id: g5
+    text: "How do I dispute a chargeback as a seller?"
+    category: rag_oos
+    expected_route: rag
+    expected_sources: []
+    expects_hedge: true
+    note: "No chargeback-dispute process documented. Payment and returns docs are adjacent, not resolving."

@@ -1,0 +1,85 @@
+{
+  "dimension": "guardrails",
+  "timestamp": "2026-06-15T10:00:09+00:00",
+  "summary": {
+    "passed": 7,
+    "total": 7,
+    "accuracy": 1.0,
+    "by_layer": {
+      "joins_safe": {
+        "passed": 1,
+        "total": 1
+      },
+      "is_read_only": {
+        "passed": 3,
+        "total": 3
+      },
+      "schema_valid": {
+        "passed": 1,
+        "total": 1
+      },
+      "row_limit_enforced": {
+        "passed": 2,
+        "total": 2
+      }
+    }
+  },
+  "cases": [
+    {
+      "dimension": "guardrails",
+      "case_id": "a1",
+      "passed": true,
+      "expected": "reject@joins_safe",
+      "actual": "rejected",
+      "detail": ""
+    },
+    {
+      "dimension": "guardrails",
+      "case_id": "a2",
+      "passed": true,
+      "expected": "reject@is_read_only",
+      "actual": "rejected",
+      "detail": ""
+    },
+    {
+      "dimension": "guardrails",
+      "case_id": "a3",
+      "passed": true,
+      "expected": "reject@schema_valid",
+      "actual": "rejected",
+      "detail": ""
+    },
+    {
+      "dimension": "guardrails",
+      "case_id": "a4",
+      "passed": true,
+      "expected": "reject@row_limit_enforced",
+      "actual": "rejected",
+      "detail": ""
+    },
+    {
+      "dimension": "guardrails",
+      "case_id": "a5",
+      "passed": true,
+      "expected": "reject@row_limit_enforced",
+      "actual": "rejected",
+      "detail": ""
+    },
+    {
+      "dimension": "guardrails",
+      "case_id": "a6",
+      "passed": true,
+      "expected": "reject@is_read_only",
+      "actual": "rejected",
+      "detail": ""
+    },
+    {
+      "dimension": "guardrails",
+      "case_id": "a7",
+      "passed": true,
+      "expected": "reject@is_read_only",
+      "actual": "rejected",
+      "detail": ""
+    }
+  ]
+}

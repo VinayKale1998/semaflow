@@ -1,0 +1,137 @@
+{
+  "dimension": "hedge_calibration",
+  "timestamp": "2026-06-15T10:23:54+00:00",
+  "summary": {
+    "passed": 9,
+    "total": 10,
+    "accuracy": 0.9,
+    "gate": 0.7,
+    "resolving_pass": 5,
+    "resolving_total": 5,
+    "hedge_pass": 4,
+    "hedge_total": 5,
+    "recoveries": 0
+  },
+  "cases": [
+    {
+      "case_id": "h1",
+      "category": "hybrid_positive",
+      "passed": true,
+      "expects_hedge": false,
+      "gate_fired": false,
+      "confidence": 0.85,
+      "revision_count": 0,
+      "recovered": false,
+      "grounded": true,
+      "route": "hybrid"
+    },
+    {
+      "case_id": "h3",
+      "category": "hybrid_positive",
+      "passed": true,
+      "expects_hedge": false,
+      "gate_fired": false,
+      "confidence": 0.95,
+      "revision_count": 0,
+      "recovered": false,
+      "grounded": true,
+      "route": "hybrid"
+    },
+    {
+      "case_id": "r1",
+      "category": "rag_positive",
+      "passed": true,
+      "expects_hedge": false,
+      "gate_fired": false,
+      "confidence": 0.95,
+      "revision_count": 0,
+      "recovered": false,
+      "grounded": true,
+      "route": "rag"
+    },
+    {
+      "case_id": "r4",
+      "category": "rag_positive",
+      "passed": true,
+      "expects_hedge": false,
+      "gate_fired": false,
+      "confidence": 0.9,
+      "revision_count": 0,
+      "recovered": false,
+      "grounded": true,
+      "route": "rag"
+    },
+    {
+      "case_id": "r6",
+      "category": "rag_positive",
+      "passed": true,
+      "expects_hedge": false,
+      "gate_fired": false,
+      "confidence": 0.95,
+      "revision_count": 0,
+      "recovered": false,
+      "grounded": true,
+      "route": "rag"
+    },
+    {
+      "case_id": "g1",
+      "category": "rag_oos",
+      "passed": true,
+      "expects_hedge": true,
+      "gate_fired": true,
+      "confidence": 0.2,
+      "revision_count": 1,
+      "recovered": false,
+      "grounded": false,
+      "route": "rag"
+    },
+    {
+      "case_id": "g2",
+      "category": "rag_oos",
+      "passed": true,
+      "expects_hedge": true,
+      "gate_fired": true,
+      "confidence": 0.15,
+      "revision_count": 1,
+      "recovered": false,
+      "grounded": true,
+      "route": "rag"
+    },
+    {
+      "case_id": "g3",
+      "category": "rag_oos",
+      "passed": true,
+      "expects_hedge": true,
+      "gate_fired": true,
+      "confidence": 0.15,
+      "revision_count": 1,
+      "recovered": false,
+      "grounded": true,
+      "route": "rag"
+    },
+    {
+      "case_id": "g4",
+      "category": "rag_oos",
+      "passed": false,
+      "expects_hedge": true,
+      "gate_fired": false,
+      "confidence": 0.95,
+      "revision_count": 0,
+      "recovered": false,
+      "grounded": true,
+      "route": "rag"
+    },
+    {
+      "case_id": "g5",
+      "category": "rag_oos",
+      "passed": true,
+      "expects_hedge": true,
+      "gate_fired": true,
+      "confidence": 0.15,
+      "revision_count": 1,
+      "recovered": false,
+      "grounded": true,
+      "route": "rag"
+    }
+  ]
+}

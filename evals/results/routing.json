@@ -1,0 +1,434 @@
+{
+  "dimension": "routing",
+  "timestamp": "2026-06-15T10:01:46+00:00",
+  "summary": {
+    "passed": 35,
+    "total": 36,
+    "accuracy": 0.9722222222222222,
+    "confusion": {
+      "sql": {
+        "sql": 15,
+        "rag": 0,
+        "hybrid": 0
+      },
+      "rag": {
+        "sql": 1,
+        "rag": 14,
+        "hybrid": 0
+      },
+      "hybrid": {
+        "sql": 0,
+        "rag": 0,
+        "hybrid": 6
+      }
+    },
+    "by_scope": {
+      "in_scope": {
+        "passed": 25,
+        "total": 26
+      },
+      "out_of_scope": {
+        "passed": 10,
+        "total": 10
+      }
+    }
+  },
+  "cases": [
+    {
+      "dimension": "routing",
+      "case_id": "s1",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.95,
+      "reason": "This is a straightforward request for a ranking of categories by revenue\u2014a classic SQL aggregation query requiring no explanation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s2",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks for a ranking of product categories by revenue for a specific time period, which can be answered entirely by querying the database for an aggregate result."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s3",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.95,
+      "reason": "This is a straightforward aggregation query asking for a computed metric (average order value) grouped by a dimension (customer state)."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s4",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks for a ranking of states by a computed metric (average order value), which requires a database query and aggregation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s5",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks for a filtered list of sellers (lowest ratings, in south region, last month) which is a database query that returns ranked/sorted rows with no explanation needed."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s6",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.95,
+      "reason": "This is a straightforward data retrieval question asking for a filtered and ranked list of sellers by rating in a specific region."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s7",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.9,
+      "reason": "The question asks for a specific metric (return rate) for a product category, which requires a database query to compute."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s8",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks for a ranking (top 10) of categories by an aggregate metric (revenue), which requires a database query to compute and rank results."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s9",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.95,
+      "reason": "This question asks for a ranking of sellers by a computed metric (average review score), filtered by region (north), with a specific sort order. It's a straightforward aggregation and ranking query that requires no explanation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "s10",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_positive",
+      "route_confidence": 0.9,
+      "reason": "The question asks for a specific metric (return rate) in a particular category, which requires querying the database to compute an aggregate result."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r1",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.99,
+      "reason": "This is a definitional question asking what a specific column means, not requiring any database query or computation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r2",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.95,
+      "reason": "This is a data structure question asking for the meaning and difference between two columns, not a computation or aggregation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r3",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.95,
+      "reason": "This is a question about data structure and column definitions, not about computing aggregates or retrieving specific records."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r4",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks about how a data field is structured and recorded, which requires explanation of the data schema and definitions rather than computation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r5",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks about platform policy and seller compliance rules, not for any data aggregation or computation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r6",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks about platform policy regarding returns and cancellations, which is definitional and explanatory information, not a data query or computation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r7",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.95,
+      "reason": "This question asks about seller policies and standards, not data metrics or aggregates from the database."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r8",
+      "passed": false,
+      "expected": "rag",
+      "actual": "sql",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.85,
+      "reason": "The question asks for a list of products in a specific category, which requires filtering and listing data from the database."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r9",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks about data structure and how payment information, including installments, is organized in the database."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "r10",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_positive",
+      "route_confidence": 0.95,
+      "reason": "This question asks about the purpose and structure of a table in the dataset, not for any aggregation or computation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "h1",
+      "passed": true,
+      "expected": "hybrid",
+      "actual": "hybrid",
+      "detail": "",
+      "category": "hybrid_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks for a computed metric (return rate in health_beauty) AND an explanation of what it means for sellers, requiring both SQL computation and contextual interpretation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "h2",
+      "passed": true,
+      "expected": "hybrid",
+      "actual": "hybrid",
+      "detail": "",
+      "category": "hybrid_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks for both a SQL computation (top categories by revenue) and an explanation of what the electronics category covers (definitional/explanatory)."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "h3",
+      "passed": true,
+      "expected": "hybrid",
+      "actual": "hybrid",
+      "detail": "",
+      "category": "hybrid_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks for both a computed metric (average order value by state) AND an explanation of what a column means (customer_state)."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "h4",
+      "passed": true,
+      "expected": "hybrid",
+      "actual": "hybrid",
+      "detail": "",
+      "category": "hybrid_positive",
+      "route_confidence": 0.92,
+      "reason": "The question asks for both a computed result (sellers in the south with lowest ratings) and an explanation (what compliance rules apply), requiring both SQL data retrieval and contextual explanation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "h5",
+      "passed": true,
+      "expected": "hybrid",
+      "actual": "hybrid",
+      "detail": "",
+      "category": "hybrid_positive",
+      "route_confidence": 0.95,
+      "reason": "The question asks for a computed metric (return rate for toys) plus an explanation of platform policy (how cancellations are handled)."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "h6",
+      "passed": true,
+      "expected": "hybrid",
+      "actual": "hybrid",
+      "detail": "",
+      "category": "hybrid_positive",
+      "route_confidence": 0.95,
+      "reason": "The question requires both a SQL aggregation (top categories by revenue) AND an explanation of what a specific category includes (watches_gifts definition)."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "x1",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_oos",
+      "route_confidence": 0.95,
+      "reason": "This is a straightforward aggregation query asking for total freight cost grouped by seller - pure SQL computation with no definitional explanation needed."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "x2",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_oos",
+      "route_confidence": 0.95,
+      "reason": "This is a straightforward count query asking for a specific aggregate number based on a condition comparing estimated and actual delivery dates."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "x3",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_oos",
+      "route_confidence": 0.95,
+      "reason": "This question asks for a computed aggregate (average delivery time) grouped by a categorical dimension (customer state), which is a straightforward database query."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "x4",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_oos",
+      "route_confidence": 0.95,
+      "reason": "This question asks for a ranking of customers by order count, which is a straightforward aggregation query against the database."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "x5",
+      "passed": true,
+      "expected": "sql",
+      "actual": "sql",
+      "detail": "",
+      "category": "sql_oos",
+      "route_confidence": 0.95,
+      "reason": "This question asks for a computed aggregate (median) grouped by category, which requires a database query."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "g1",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_oos",
+      "route_confidence": 0.95,
+      "reason": "This question asks about platform policy and procedures for handling damaged items, not for data retrieval or computation."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "g2",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_oos",
+      "route_confidence": 0.95,
+      "reason": "This question asks about Olist's platform policy regarding cryptocurrency payments, which requires domain knowledge rather than database queries."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "g3",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_oos",
+      "route_confidence": 0.95,
+      "reason": "This question asks about platform policy regarding data retention, which is not answerable by database queries and requires domain knowledge about the platform's policies."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "g4",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_oos",
+      "route_confidence": 0.95,
+      "reason": "This question asks about platform policy (SLA for customer support), not data computation or analysis."
+    },
+    {
+      "dimension": "routing",
+      "case_id": "g5",
+      "passed": true,
+      "expected": "rag",
+      "actual": "rag",
+      "detail": "",
+      "category": "rag_oos",
+      "route_confidence": 0.95,
+      "reason": "Question asks about seller platform policies and procedures, not data computation."
+    }
+  ]
+}

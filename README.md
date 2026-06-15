@@ -25,6 +25,8 @@ The model can be wrong without being dangerous.
 - [Stack](#stack)
 - [Project layout](#project-layout)
 - [Quickstart](#quickstart)
+- [Evaluation](#evaluation)
+- [Lessons Learned](#lessons-learned)
 - [Scope and non-goals](#scope-and-non-goals)
 - [Status](#status)
 
@@ -183,7 +185,7 @@ app/
   ui/            Streamlit trust UI
 db/              schema and migration scripts
 data/            raw Olist CSVs (downloaded, not committed)
-evals/           golden-set evaluation (planned)
+evals/           governance scorecard: datasets, scorers, runners, report
 scripts/probes/  diagnostic scripts (not tests)
 ```
 
@@ -221,6 +223,43 @@ streamlit run app/ui/streamlit_app.py
 Run the test suite with `pytest app/` (scope to `app/` so it does not scan the
 Docker data volume).
 
+## Evaluation
+
+The system is measured with a **governance scorecard**, not a generic
+answer-quality benchmark (`evals/`, run with `python -m evals.run_evals --all`).
+It scores the things that matter for a governed system across five dimensions:
+routing accuracy, measure selection (including correctly **refusing**
+out-of-scope questions), guardrail efficacy, retrieval hit-rate, and hedge
+calibration. The dataset is deliberately half negative cases: an out-of-scope SQL
+question must be refused, not answered with a plausible-looking wrong measure.
+
+Latest run:
+
+| Dimension | Score |
+|---|---|
+| Routing accuracy | 35/36 (out-of-scope shape: 10/10) |
+| Measure selection + trust boundary | 21/21 |
+| Glossary resolution | 16/16 |
+| Guardrail efficacy | 7/7 (every layer isolated) |
+| Retrieval hit@5 | 15/16, MRR 0.797 |
+| Hedge calibration | 9/10 |
+
+The eval was not just a report card. It surfaced two real failures and drove the
+fixes:
+
+- **The SQL trust boundary had a hole.** The model picks the closest measure even
+  when none fits, and nothing gated on confidence, so an out-of-scope question
+  could select a wrong measure at confidence ~0.15 and execute it. Added a
+  measure-confidence gate that refuses below threshold.
+- **The reviewer's hedge detection was overfit** to its two prompt examples. New
+  unanswerable topics scored high and skipped the self-correction loop. Rewriting
+  the rubric as a general decision procedure took hedge calibration from 7/10 to
+  9/10 and, importantly, generalized to held-out topics.
+
+Two known limitations (`r8`, `g4`) are kept in and documented rather than removed,
+because an honest scorecard is more useful than a green one. Details in
+`evals/README.md`.
+
 ## Lessons Learned
 
 - **Data quality problems matter more than model quality.** A naive order-items
@@ -240,6 +279,10 @@ Docker data volume).
 - **Every component should justify its existence.** Semantic chunking, HyDE, and
   multi-hop retrieval were evaluated and deliberately excluded because the
   observed failure modes on this corpus did not justify the added complexity.
+- **A good eval changes the system, not just the README.** The governance
+  scorecard found two real holes (an ungated SQL measure selection and an overfit
+  hedge reviewer) and drove both fixes. Negative test cases, the ones the system
+  should refuse, surfaced failures that all-positive tests never would.
 
 ## Scope and non-goals
 
@@ -264,7 +307,8 @@ Knowing what to leave out is part of the design.
 
 This is a portfolio project on a public dataset, not a production system.
 
-- Stage 1 to 5 complete: data model, semantic layer, text-to-SQL with
-  guardrails, hybrid RAG, and the LangGraph orchestrator with the reviewer and
-  trust UI.
-- Stage 6 (a golden-set evaluation harness) is next.
+- Stage 1 to 6 complete: data model, semantic layer, text-to-SQL with
+  guardrails, hybrid RAG, the LangGraph orchestrator with the reviewer and trust
+  UI, and the governance evaluation harness.
+- The evaluation harness (Stage 6) closed the loop: it found two real failures and
+  drove the fixes (see Evaluation above).

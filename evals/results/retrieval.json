@@ -1,0 +1,251 @@
+{
+  "dimension": "retrieval",
+  "timestamp": "2026-06-15T10:13:13+00:00",
+  "summary": {
+    "passed": 15,
+    "total": 16,
+    "accuracy": 0.9375,
+    "hit_rate": 0.9375,
+    "mrr": 0.796875,
+    "top_k": 5
+  },
+  "cases": [
+    {
+      "case_id": "r1",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 2,
+      "reciprocal_rank": 0.5,
+      "expected_sources": [
+        "fact_orders.md"
+      ],
+      "retrieved_sources": [
+        "returns_and_cancellations.md",
+        "fact_orders.md",
+        "fact_order_reviews.md"
+      ]
+    },
+    {
+      "case_id": "r2",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "dim_customers.md"
+      ],
+      "retrieved_sources": [
+        "dim_customers.md",
+        "fact_orders.md"
+      ]
+    },
+    {
+      "case_id": "r3",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 2,
+      "reciprocal_rank": 0.5,
+      "expected_sources": [
+        "fact_order_items.md"
+      ],
+      "retrieved_sources": [
+        "dim_sellers.md",
+        "fact_order_items.md",
+        "fact_orders.md"
+      ]
+    },
+    {
+      "case_id": "r4",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "fact_order_reviews.md"
+      ],
+      "retrieved_sources": [
+        "fact_order_reviews.md",
+        "seller_compliance.md"
+      ]
+    },
+    {
+      "case_id": "r5",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "seller_compliance.md"
+      ],
+      "retrieved_sources": [
+        "seller_compliance.md",
+        "returns_and_cancellations.md",
+        "dim_sellers.md"
+      ]
+    },
+    {
+      "case_id": "r6",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "returns_and_cancellations.md"
+      ],
+      "retrieved_sources": [
+        "returns_and_cancellations.md",
+        "seller_compliance.md"
+      ]
+    },
+    {
+      "case_id": "r7",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 2,
+      "reciprocal_rank": 0.5,
+      "expected_sources": [
+        "listing_standards.md"
+      ],
+      "retrieved_sources": [
+        "seller_compliance.md",
+        "listing_standards.md"
+      ]
+    },
+    {
+      "case_id": "r8",
+      "category": "rag_positive",
+      "passed": false,
+      "rank": null,
+      "reciprocal_rank": 0.0,
+      "expected_sources": [
+        "category_health_beauty.md"
+      ],
+      "retrieved_sources": [
+        "category_perfumery.md",
+        "category_baby.md",
+        "dim_category_translation.md"
+      ]
+    },
+    {
+      "case_id": "r9",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "fact_order_payments.md"
+      ],
+      "retrieved_sources": [
+        "fact_order_payments.md",
+        "fact_order_items.md"
+      ]
+    },
+    {
+      "case_id": "r10",
+      "category": "rag_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "geo_lookup.md"
+      ],
+      "retrieved_sources": [
+        "geo_lookup.md",
+        "dim_customers.md",
+        "dim_sellers.md"
+      ]
+    },
+    {
+      "case_id": "h1",
+      "category": "hybrid_positive",
+      "passed": true,
+      "rank": 4,
+      "reciprocal_rank": 0.25,
+      "expected_sources": [
+        "returns_and_cancellations.md",
+        "seller_compliance.md"
+      ],
+      "retrieved_sources": [
+        "category_health_beauty.md",
+        "category_baby.md",
+        "category_watches_gifts.md",
+        "seller_compliance.md",
+        "category_perfumery.md"
+      ]
+    },
+    {
+      "case_id": "h2",
+      "category": "hybrid_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "category_electronics.md"
+      ],
+      "retrieved_sources": [
+        "category_electronics.md",
+        "category_computers_accessories.md",
+        "category_health_beauty.md",
+        "category_watches_gifts.md"
+      ]
+    },
+    {
+      "case_id": "h3",
+      "category": "hybrid_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "dim_customers.md"
+      ],
+      "retrieved_sources": [
+        "dim_customers.md",
+        "fact_order_items.md",
+        "fact_orders.md"
+      ]
+    },
+    {
+      "case_id": "h4",
+      "category": "hybrid_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "seller_compliance.md"
+      ],
+      "retrieved_sources": [
+        "seller_compliance.md",
+        "dim_sellers.md"
+      ]
+    },
+    {
+      "case_id": "h5",
+      "category": "hybrid_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "returns_and_cancellations.md"
+      ],
+      "retrieved_sources": [
+        "returns_and_cancellations.md",
+        "seller_compliance.md"
+      ]
+    },
+    {
+      "case_id": "h6",
+      "category": "hybrid_positive",
+      "passed": true,
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "expected_sources": [
+        "category_watches_gifts.md"
+      ],
+      "retrieved_sources": [
+        "category_watches_gifts.md",
+        "category_health_beauty.md",
+        "dim_category_translation.md"
+      ]
+    }
+  ]
+}

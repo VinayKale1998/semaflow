@@ -25,6 +25,17 @@ from .resolver import ResolverError, resolve
 
 logger = logging.getLogger(__name__)
 
+# Refuse a measure selection below this confidence. The node prompt instructs the
+# model to pick the closest measure even when none fits well (prompts.py rule 3),
+# so an out-of-scope question can select a wrong measure at low confidence and
+# still resolve, pass guardrails, and execute, returning wrong-but-valid rows.
+# This gate converts a low-confidence selection into an honest no_measure_matched
+# refusal: the SQL half of the trust boundary. Added in Stage 6 after the eval
+# (evals/runners/measure_selection.py) showed in-scope questions score ~0.95 and
+# out-of-scope ~0.15, a clean separation. Mirrors the reviewer's 0.7 gate in
+# graph.py. Tunable; static for now.
+MEASURE_CONFIDENCE_THRESHOLD = 0.5
+
 
 class PipelineResult(BaseModel):
     status: Literal[
@@ -49,6 +60,24 @@ async def run_sql_pipeline(question: str) -> PipelineResult:
         return PipelineResult(
             status="no_measure_matched",
             failure_reason="The model could not select a declared measure for this question.",
+        )
+
+    if selection.confidence < MEASURE_CONFIDENCE_THRESHOLD:
+        logger.info(
+            "pipeline: measure %s selected at low confidence %.2f (< %.2f), refusing; question=%r",
+            selection.measure, selection.confidence, MEASURE_CONFIDENCE_THRESHOLD, question,
+        )
+        return PipelineResult(
+            status="no_measure_matched",
+            failure_reason=(
+                f"Closest measure {selection.measure!r} was selected at confidence "
+                f"{selection.confidence:.2f}, below the {MEASURE_CONFIDENCE_THRESHOLD} "
+                "threshold. The question likely falls outside the governed measures."
+            ),
+            failure_detail={
+                "rejected_measure": selection.measure,
+                "confidence": selection.confidence,
+            },
         )
 
     try:

@@ -58,6 +58,15 @@ def get_orchestrator() -> Orchestrator:
     return Orchestrator()
 
 
+# ── rendering helpers ────────────────────────────────────────────────────────
+
+def _escape_md(text: str) -> str:
+    """Escape characters Streamlit markdown would mis-render. Currency '$'
+    triggers LaTeX math mode, so a pair like 'R$772 ... R$708' renders the text
+    between them as math and splits it into gibberish glyphs."""
+    return text.replace("\\", "\\\\").replace("$", "\\$")
+
+
 # ── chart helpers ────────────────────────────────────────────────────────────
 
 def _infer_types(rows: list[dict], cols: list[str]) -> dict[str, str]:
@@ -165,7 +174,7 @@ def render_chunks(state: dict) -> None:
             source = chunk.get("source")
             section = chunk.get("section") or "—"
             st.markdown(f"**{i}. {source}** · {section}")
-            st.write(chunk.get("content", ""))
+            st.write(_escape_md(chunk.get("content", "")))
             if i < len(rag_chunks):
                 st.divider()
 
@@ -187,7 +196,7 @@ def render_reviewer(state: dict) -> None:
         st.markdown(f"**Confidence:** :{color}[{confidence:.2f}]")
         st.markdown(f"**Grounded:** {'✓ yes' if grounded else '✗ no'}")
         st.markdown("**Reasoning:**")
-        st.write(reasoning)
+        st.write(_escape_md(reasoning))
         if revision_count > 0 and revised_query:
             st.markdown("**Revised query (loop fired):**")
             st.code(revised_query)
@@ -204,7 +213,8 @@ def render_result(state: dict) -> None:
     synthesis = state.get("synthesis")
     answer = (synthesis or {}).get("answer", "").strip()
     if answer:
-        st.markdown(f"#### {answer}" if len(answer) < 120 else answer)
+        safe = _escape_md(answer)
+        st.markdown(f"#### {safe}" if len(answer) < 120 else safe)
     else:
         st.info("No answer was produced.")
 

@@ -31,9 +31,12 @@ def orchestrator() -> Orchestrator:
 
 SYNTHESIZER_CASES = [
     {
+        # Synthesizer speaks in plain business terms, not raw column tokens
+        # (e.g. "health and beauty", not "health_beauty"). Assert grounding on
+        # the human-readable category names the user actually sees.
         "query": "Top 5 product categories by revenue.",
         "expected_route": "sql",
-        "must_mention": ["health_beauty", "watches_gifts"],
+        "must_mention": ["health and beauty", "watches and gifts"],
     },
     {
         "query": "What does order_status mean?",
@@ -43,7 +46,7 @@ SYNTHESIZER_CASES = [
     {
         "query": "Show me the top 5 product categories by revenue and explain what those categories contain.",
         "expected_route": "hybrid",
-        "must_mention": ["health_beauty", "watches_gifts", "bed_bath"],
+        "must_mention": ["health and beauty", "watches and gifts", "bed"],
     },
 ]
 

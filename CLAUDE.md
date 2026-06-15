@@ -307,13 +307,37 @@ build and the narrative.
     Crypto phrasing was rejected as the demo: it fired but recovered unstably
     (reformulation pulls the payment-types chunk; 2/3 runs scored above gate).
 - Stage 5 deps added to venv: langgraph, langsmith.
-- Test suite: 37 tests (added test_stage5_checkpoint.py x5). Run scoped to app/ (bare pytest tries to scan
+- Test suite: 37 tests in app/ + 22 offline tests in evals/tests/test_scorers.py
+  (59 total). Run scoped: `pytest app/ evals/` (bare pytest tries to scan
   root-owned db/pgdata and errors). test_pipeline.py makes live Haiku calls
   and is occasionally flaky (measure/parameter nondeterminism, e.g. Haiku
   extracts top_n='all' for "Lowest rated sellers by state"); a single case
   failing in a full run passes on re-run. No pytest-asyncio installed (async
   tests run through the pipeline facade).
-- Stage 6 (evals): NOT STARTED.
+- Stage 6 (evals): COMPLETE. Governance scorecard, not answer-quality. Lives in
+  /evals (see evals/README.md). evals/datasets/eval_questions.yaml (36 labeled
+  questions: 20 positive + 10 out-of-scope refuse/hedge negatives, the senior
+  signal) + adversarial_sql.yaml (7 SQL, one per guardrail layer). Five
+  dimensions, each a runner under evals/runners/ writing evals/results/<dim>.json;
+  evals/report.py assembles evals/results/scorecard.md; `python -m evals.run_evals
+  --all|--report|<dims>`. Pure scorers in evals/scorers.py (unit-tested, no I/O).
+  Latest scorecard: routing 35/36 (out-of-scope 10/10), measure-selection 21/21 +
+  trust-boundary 21/21 + glossary 16/16, guardrails 7/7 (per-layer isolated),
+  retrieval 15/16 hit@5 / MRR 0.797, hedge 9/10. LLM dims (Haiku) move ~1 case
+  across runs.
+  - The eval drove TWO failure-driven fixes (the headline):
+    (1) SQL trust-boundary hole: node picks closest measure even when none fits
+    (prompts.py rule 3) and nothing gated on confidence, so OOS questions selected
+    a wrong measure at ~0.15 and executed. Added MEASURE_CONFIDENCE_THRESHOLD=0.5
+    in app/sql/pipeline.py -> low-confidence selection returns no_measure_matched.
+    Regression clean (test_pipeline + test_guardrails 10/10).
+    (2) Reviewer hedge-detection overfit to its 2 prompt examples: new
+    unanswerable topics scored 0.85 and skipped the loop. Rewrote reviewer.py
+    confidence rubric into a general decision procedure (non-answer ceiling <=0.2).
+    Hedge 7/10 -> 9/10 and generalized to held-out topics. test_reviewer 3/3 green.
+  - Kept (not gamed): r8 fails routing+retrieval (ambiguous "products in
+    health_beauty"); g4 scores high (corpus has seller response-time expectations
+    resembling a support SLA). Both documented in evals/README.md.
 
 ## Operating context
 - Build pace: 90 to 120 min/day. Job hunt is the primary engine.

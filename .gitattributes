@@ -1,0 +1,4 @@
+# Normalize all text files to LF in the repo and on checkout.
+# Stops CRLF<->LF churn when files are touched from Windows tools
+# over the \\wsl.localhost share (this repo lives in WSL, edited from Win).
+* text=auto eol=lf
